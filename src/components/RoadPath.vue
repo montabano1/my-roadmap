@@ -6,16 +6,33 @@
         :d="pathD"
         class="road-line"
         stroke="#2c3e50"
-        stroke-width="30"  
+        stroke-width="60"  
         fill="none"
       />
-      <!-- Dashed center line -->
+      <!-- Dashed center line for non-completed portion -->
       <path
         :d="pathD"
         class="road-dash"
         stroke="white"
-        stroke-width="2"
-        stroke-dasharray="10,10"
+        stroke-width="4"
+        stroke-dasharray="15,15"
+        fill="none"
+      />
+      <!-- Completed portion with new style -->
+      <path
+        v-if="currentUnit > 1"
+        :d="completedPathD"
+        class="road-line completed"
+        stroke="#7285c4"
+        stroke-width="60"
+        fill="none"
+      />
+      <!-- Black line for completed portion -->
+      <path
+        v-if="currentUnit > 1"
+        :d="completedPathD"
+        stroke="#2c3e50"
+        stroke-width="4"
         fill="none"
       />
     </svg>
@@ -36,11 +53,20 @@
       pathPoints: {
         type: Array,
         required: true
+      },
+      currentUnit: {
+        type: Number,
+        default: 1
       }
     },
     computed: {
       pathD() {
         return this.generatePath(this.pathPoints)
+      },
+      completedPathD() {
+        // Only generate path up to current unit
+        const completedPoints = this.pathPoints.slice(0, this.currentUnit + 1)
+        return this.generatePath(completedPoints)
       }
     },
     methods: {

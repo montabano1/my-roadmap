@@ -7,6 +7,7 @@
         :path-points="pathPoints"
         :view-box-width="viewBoxWidth"
         :view-box-height="viewBoxHeight"
+        :current-unit="currentUnit"
       />
       
       <!-- Cloud Nodes -->
@@ -16,6 +17,7 @@
         :title="unit.title"
         :duration="unit.duration"
         :position="getNodePosition(index)"
+        :status="getNodeStatus(index)"
         @start="handleStart(index)"
       />
     </div>
@@ -32,6 +34,12 @@ export default {
     RoadPath,
     CloudNode
   },
+  props: {
+    currentUnit: {
+      type: Number,
+      default: 2
+    }
+  },
   data() {
     return {
       viewBoxWidth: 800,
@@ -46,10 +54,10 @@ export default {
       pathPoints: [
         [50, 100, 'move'],                           // Starting point
         [300, 100, 'line'],                          // Node 1: Day 1 Math
-        [600, 300, 'curve', 450, 100, 600, 200],    // Node 2: Day 2 R&W
-        [300, 500, 'curve', 450, 400, 300, 400],    // Node 3: Day 3 Math
-        [600, 700, 'curve', 300, 600, 600, 600],    // Node 4: Day 4 R&W
-        [300, 900, 'curve', 600, 800, 300, 800]     // Node 5: Day 5 Math
+        [700, 300, 'curve', 500, 150, 700, 250],    // Node 2: Day 2 R&W (right-down)
+        [100, 500, 'curve', 600, 400, 200, 450],    // Node 3: Day 3 Math (left-down)
+        [700, 700, 'curve', 200, 600, 600, 650],    // Node 4: Day 4 R&W (right-down)
+        [100, 900, 'curve', 600, 800, 200, 850]     // Node 5: Day 5 Math (left-down)
       ]
     }
   },
@@ -71,6 +79,11 @@ export default {
     handleStart(index) {
       console.log(`Starting unit ${index + 1}`)
       // Handle start logic here
+    },
+    getNodeStatus(index) {
+      if (index < this.currentUnit - 1) return 'done'
+      if (index === this.currentUnit - 1) return 'current'
+      return 'pending'
     }
   }
 }
