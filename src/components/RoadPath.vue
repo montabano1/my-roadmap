@@ -6,8 +6,9 @@
         :d="pathD"
         class="road-line"
         stroke="#2c3e50"
-        stroke-width="60"  
+        stroke-width="80"  
         fill="none"
+        stroke-linecap="round"
       />
       <!-- Dashed center line for non-completed portion -->
       <path
@@ -24,8 +25,9 @@
         :d="completedPathD"
         class="road-line completed"
         stroke="#7285c4"
-        stroke-width="60"
+        stroke-width="80"
         fill="none"
+        stroke-linecap="round"
       />
       <!-- Black line for completed portion -->
       <path

@@ -2,8 +2,12 @@
 <template>
   <div class="roadmap-container">
     <div class="road-content">
-      <!-- Start Circle -->
-      <div class="start-circle" :style="getStartCircleStyle()"></div>
+      <!-- Trees -->
+      <div v-for="(tree, index) in trees" :key="index" 
+           class="tree" :style="getTreeStyle(tree)">
+        <img :src="getTreeImage(tree.type)" :alt="`Tree ${tree.type}`" />
+      </div>
+
       <!-- User Avatar -->
       <div class="user-avatar" :style="getUserAvatarStyle()">
         <div class="avatar-pulse"></div>
@@ -44,11 +48,21 @@ export default {
   props: {
     currentUnit: {
       type: Number,
-      default: 2
+      default: 3
     }
   },
   data() {
     return {
+      trees: [],
+      // Predefined tree layout pattern
+      treeLayout: {
+        0: ['left', 1, 0.5, 1.4],    // [side, treeType, xOffset, scale]
+        1: ['right', 3, 0.8, 1.2],
+        2: ['left', 2, 0.3, 1.6],
+        3: ['right', 4, 0.6, 1.3],
+        4: ['left', 5, 0.7, 1.5],
+        5: ['right', 1, 0.4, 1.4]
+      },
       viewBoxWidth: 800,
       viewBoxHeight: 1200,
       // Road curve parameters
@@ -82,7 +96,120 @@ export default {
       return this.generatePathPoints()
     }
   },
+  created() {
+    this.generateTrees()
+  },
   methods: {
+    generateTrees() {
+      const trees = []
+      const verticalSpacing = 300 // One tree every 300px vertically
+      
+      // Calculate total height needed based on last node position
+      const lastNode = this.pathPoints[this.pathPoints.length - 1]
+      const totalHeight = lastNode ? lastNode[1] + 300 : this.viewBoxHeight
+      const numVerticalSections = Math.floor(totalHeight / verticalSpacing)
+      
+      // Generate trees based on predefined layout
+      for (let section = 0; section < numVerticalSections; section++) {
+        const layout = this.treeLayout[section % Object.keys(this.treeLayout).length]
+        if (!layout) continue
+        
+        const [side, treeType, xOffset, scale] = layout
+        const sectionY = section * verticalSpacing
+        
+        // Calculate x position based on side and offset
+        let x
+        if (side === 'left') {
+          x = (this.viewBoxWidth / 3) * xOffset
+        } else {
+          x = this.viewBoxWidth - ((this.viewBoxWidth / 3) * xOffset)
+        }
+        
+        // Add some slight vertical variation
+        const y = sectionY + (verticalSpacing * 0.2)
+        
+        trees.push({
+          x,
+          y,
+          type: treeType,
+          scale
+        })
+      }
+      
+      this.trees = trees
+    },
+
+    isNearOtherTrees(x, y, otherTrees, buffer) {
+      return otherTrees.some(tree => {
+        const dx = x - tree.x
+        const dy = y - tree.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        return distance < buffer
+      })
+    },
+
+    isNearPath(x, y, buffer) {
+      // Simple check if point is near any path segment
+      for (let i = 0; i < this.pathPoints.length - 1; i++) {
+        const [x1, y1] = this.pathPoints[i]
+        const [x2, y2] = this.pathPoints[i + 1]
+        
+        // Calculate distance from point to line segment
+        const distance = this.pointToLineDistance(x, y, x1, y1, x2, y2)
+        if (distance < buffer) return true
+      }
+      return false
+    },
+
+    pointToLineDistance(x, y, x1, y1, x2, y2) {
+      const A = x - x1
+      const B = y - y1
+      const C = x2 - x1
+      const D = y2 - y1
+      
+      const dot = A * C + B * D
+      const len_sq = C * C + D * D
+      
+      let param = -1
+      if (len_sq !== 0) param = dot / len_sq
+      
+      let xx, yy
+      
+      if (param < 0) {
+        xx = x1
+        yy = y1
+      } else if (param > 1) {
+        xx = x2
+        yy = y2
+      } else {
+        xx = x1 + param * C
+        yy = y1 + param * D
+      }
+      
+      const dx = x - xx
+      const dy = y - yy
+      return Math.sqrt(dx * dx + dy * dy)
+    },
+
+    getTreeStyle(tree) {
+      return {
+        left: `${(tree.x / this.viewBoxWidth) * 100}%`,
+        top: `${(tree.y / this.viewBoxHeight) * 100}%`,
+        transform: `translate(-50%, -50%) scale(${tree.scale})`
+      }
+    },
+
+    getTreeImage(type) {
+      // Using static imports for tree images
+      const treeImages = {
+        1: new URL('../assets/tree1.png', import.meta.url).href,
+        2: new URL('../assets/tree2.png', import.meta.url).href,
+        3: new URL('../assets/tree3.png', import.meta.url).href,
+        4: new URL('../assets/tree4.png', import.meta.url).href,
+        5: new URL('../assets/tree5.png', import.meta.url).href
+      }
+      return treeImages[type]
+    },
     getStartCircleStyle() {
       // Position the circle at the start of the path
       const x = 150 // Match the startX from generatePathPoints
@@ -220,15 +347,20 @@ export default {
 </script>
 
 <style scoped>
-.start-circle {
+.tree {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  background: #2c3e50;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 20;
+  width: 160px;
+  height: 160px;
+  z-index: 5;
+  transition: transform 0.3s ease;
 }
+
+.tree img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .user-avatar {
   position: absolute;
   width: 80px;
@@ -258,9 +390,9 @@ export default {
   height: 100%;
   border-radius: 50%;
   border: 2px solid rgba(114, 133, 196, 0.3);
-  background: transparent;
+  background: whitesmoke;
   z-index: 1;
-  animation: pulse 2s infinite;
+  animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
