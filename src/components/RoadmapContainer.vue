@@ -2,6 +2,13 @@
 <template>
   <div class="roadmap-container">
     <div class="road-content">
+      <!-- Start Circle -->
+      <div class="start-circle" :style="getStartCircleStyle()"></div>
+      <!-- User Avatar -->
+      <div class="user-avatar" :style="getUserAvatarStyle()">
+        <div class="avatar-pulse"></div>
+        <img src="../assets/userProfile.png" alt="User Avatar" />
+      </div>
       <!-- Path Component -->
       <RoadPath
         :path-points="pathPoints"
@@ -76,15 +83,69 @@ export default {
     }
   },
   methods: {
+    getStartCircleStyle() {
+      // Position the circle at the start of the path
+      const x = 150 // Match the startX from generatePathPoints
+      const y = 250 // Match the startY
+      return {
+        left: `${(x / this.viewBoxWidth) * 100}%`,
+        top: `${(y / this.viewBoxHeight) * 100}%`,
+        transform: 'translate(-50%, -50%)'
+      }
+    },
+    getUserAvatarStyle() {
+      const points = this.pathPoints
+      const currentIndex = Math.floor(this.currentUnit) - 1
+      
+      if (currentIndex < 0 || currentIndex >= points.length - 1) return { display: 'none' }
+      
+      const currentPoint = points[currentIndex]
+      const nextPoint = points[currentIndex + 1]
+      
+      const progress = 0.75
+      
+      const [x1, y1] = currentPoint
+      const [x2, y2, type, cx1, cy1, cx2, cy2] = nextPoint
+      
+      let x, y
+      
+      if (type === 'line') {
+        // Linear interpolation for straight segments
+        x = x1 + (x2 - x1) * progress
+        y = y1 + (y2 - y1) * progress
+      } else {
+        // Cubic Bezier interpolation for curves
+        const t = progress
+        const mt = 1 - t
+        
+        // Position
+        x = Math.pow(mt, 3) * x1 +
+            3 * Math.pow(mt, 2) * t * cx1 +
+            3 * mt * Math.pow(t, 2) * cx2 +
+            Math.pow(t, 3) * x2
+        
+        y = Math.pow(mt, 3) * y1 +
+            3 * Math.pow(mt, 2) * t * cy1 +
+            3 * mt * Math.pow(t, 2) * cy2 +
+            Math.pow(t, 3) * y2
+      }
+      
+      return {
+        left: `${(x / this.viewBoxWidth) * 100}%`,
+        top: `${(y / this.viewBoxHeight) * 100}%`,
+        transform: 'translate(-50%, -50%)'
+      }
+    },
     generatePathPoints() {
       const startY = 250  // Starting Y position
       const points = []
       const availableWidth = this.viewBoxWidth - (2 * this.marginX)
+      const startX = 150  // Starting point further left
       
-      // Starting point with user avatar
-      points.push([this.marginX, startY, 'move'])
+      // Starting point with circle
+      points.push([startX, startY, 'move'])
       
-      // First node extends right
+      // Extend to first node
       points.push([this.marginX + 200, startY, 'line'])
       
       // Generate subsequent points
@@ -159,6 +220,64 @@ export default {
 </script>
 
 <style scoped>
+.start-circle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: #2c3e50;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+.user-avatar {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  position: relative;
+  z-index: 2;
+}
+
+.avatar-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid rgba(114, 133, 196, 0.3);
+  background: transparent;
+  z-index: 1;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+}
+
 .roadmap-container {
   width: 100%;
   min-width: 800px;
