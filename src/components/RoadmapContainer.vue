@@ -44,24 +44,93 @@ export default {
     return {
       viewBoxWidth: 800,
       viewBoxHeight: 1200,
+      // Road curve parameters
+      curveIntensity: 150,    // How much the curves bend (was 80)
+      snakeOffset: 100,       // How far nodes offset from center
+      verticalGap: 500,       // Gap between nodes
+      marginX: 250,           // Side margins
       learningUnits: [
         { title: 'Day 1 Math', duration: '20min' },
         { title: 'Day 2 R&W', duration: '20min' },
         { title: 'Day 3 Math', duration: '20min' },
         { title: 'Day 4 R&W', duration: '20min' },
-        { title: 'Day 5 Math', duration: '20min' }
-      ],
-      pathPoints: [
-        [50, 100, 'move'],                           // Starting point
-        [300, 100, 'line'],                          // Node 1: Day 1 Math
-        [700, 300, 'curve', 500, 150, 700, 250],    // Node 2: Day 2 R&W (right-down)
-        [100, 500, 'curve', 600, 400, 200, 450],    // Node 3: Day 3 Math (left-down)
-        [700, 700, 'curve', 200, 600, 600, 650],    // Node 4: Day 4 R&W (right-down)
-        [100, 900, 'curve', 600, 800, 200, 850]     // Node 5: Day 5 Math (left-down)
+        { title: 'Day 5 Math', duration: '20min' },
+        { title: 'Day 6 R&W', duration: '20min' },
+        { title: 'Day 7 Math', duration: '20min' },
+        { title: 'Day 8 R&W', duration: '20min' },
+        { title: 'Day 9 Math', duration: '20min' },
+        { title: 'Day 10 R&W', duration: '20min' },
+        { title: 'Day 11 Math', duration: '20min' },
+        { title: 'Day 12 R&W', duration: '20min' },
+        { title: 'Day 13 Math', duration: '20min' },
+        { title: 'Day 14 R&W', duration: '20min' },
+        { title: 'Day 15 Math', duration: '20min' },
+        { title: 'Day 16 R&W', duration: '20min' },
+        { title: 'Day 17 Math', duration: '20min' },
       ]
     }
   },
+  computed: {
+    pathPoints() {
+      return this.generatePathPoints()
+    }
+  },
   methods: {
+    generatePathPoints() {
+      const startY = 250  // Starting Y position
+      const points = []
+      const availableWidth = this.viewBoxWidth - (2 * this.marginX)
+      
+      // Starting point with user avatar
+      points.push([this.marginX, startY, 'move'])
+      
+      // First node extends right
+      points.push([this.marginX + 200, startY, 'line'])
+      
+      // Generate subsequent points
+      for (let i = 1; i < this.learningUnits.length; i++) {
+        const cyclePosition = i % 14 // Complete cycle is 14 units
+        const currentY = startY + i * this.verticalGap
+        
+        // Calculate which segment we're in (0-6 for right, 7-13 for left)
+        const segment = Math.floor(cyclePosition / 7)
+        const progressInSegment = cyclePosition % 7
+        
+        // Calculate base X position
+        let baseX
+        if (segment === 0) { // First 7 units - moving right
+          baseX = this.marginX + (availableWidth * (progressInSegment / 6))
+        } else { // Next 7 units - moving left
+          baseX = (this.viewBoxWidth - this.marginX) - (availableWidth * (progressInSegment / 6))
+        }
+        
+        // Add snake effect
+        const isEven = i % 2 === 0
+        const targetX = baseX + (isEven ? this.snakeOffset : -this.snakeOffset)
+        
+        // Get previous point for control points calculation
+        const prevPoint = points[points.length - 1]
+        const prevX = prevPoint[0]
+        const prevY = prevPoint[1]
+        
+        // Calculate single control point for smooth curve
+        const midY = (prevY + currentY) / 2
+        const midX = (prevX + targetX) / 2
+        const offset = isEven ? this.curveIntensity : -this.curveIntensity
+        
+        points.push([
+          targetX,
+          currentY,
+          'curve',
+          midX + offset,
+          midY,
+          midX + offset,
+          midY
+        ])
+      }
+      
+      return points
+    },
     getNodePosition(index) {
       // Get the corresponding path point for this node
       const point = this.pathPoints[index + 1] // +1 because first point is "move"
@@ -92,6 +161,7 @@ export default {
 <style scoped>
 .roadmap-container {
   width: 100%;
+  min-width: 800px;
   height: 100vh;
   background-color: #8b9ddb;
   overflow: hidden;
