@@ -48,9 +48,14 @@ export default {
   props: {
     currentUnit: {
       type: Number,
-      default: 3
+      default: 2
+    },
+    justCompleted: {
+      type: Boolean,
+      default: true
     }
   },
+  emits: ['update:currentUnit', 'update:justCompleted'],
   data() {
     return {
       trees: [],
@@ -229,7 +234,8 @@ export default {
       const currentPoint = points[currentIndex]
       const nextPoint = points[currentIndex + 1]
       
-      const progress = 0.75
+      // If just completed, start at 25% and animate to 75%
+      const progress = this.justCompleted ? 0.15 : 0.75
       
       const [x1, y1] = currentPoint
       const [x2, y2, type, cx1, cy1, cx2, cy2] = nextPoint
@@ -260,7 +266,8 @@ export default {
       return {
         left: `${(x / this.viewBoxWidth) * 100}%`,
         top: `${(y / this.viewBoxHeight) * 100}%`,
-        transform: 'translate(-50%, -50%)'
+        transform: 'translate(-50%, -50%)',
+        transition: this.justCompleted ? 'left 1s ease-in-out, top 1s ease-in-out' : 'none'
       }
     },
     generatePathPoints() {
@@ -334,8 +341,14 @@ export default {
       }
     },
     handleStart(index) {
-      console.log(`Starting unit ${index + 1}`)
-      // Handle start logic here
+      // First update unit and set justCompleted to instantly move to 15% of next unit
+      this.$emit('update:currentUnit', index + 2);
+      this.$emit('update:justCompleted', true);
+      
+      // After a delay, trigger animation to 75%
+      setTimeout(() => {
+        this.$emit('update:justCompleted', false);
+      }, 1500);
     },
     getNodeStatus(index) {
       if (index < this.currentUnit - 1) return 'done'
@@ -372,7 +385,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  will-change: transform, left, top;
 }
 
 .user-avatar img {

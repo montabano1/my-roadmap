@@ -1,7 +1,10 @@
 <!-- App.vue -->
 <template>
   <div class="app">
-    <RoadmapContainer />
+    <RoadmapContainer
+      v-model:current-unit="currentUnit"
+      v-model:just-completed="justCompleted"
+    />
   </div>
 </template>
 
@@ -12,6 +15,21 @@ export default {
   name: 'App',
   components: {
     RoadmapContainer
+  },
+  data() {
+    return {
+      currentUnit: 2,
+      justCompleted: true
+    }
+  },
+  mounted() {
+    // Simulate returning from a completed unit
+    this.justCompleted = true;
+    
+    // After a brief delay, trigger the animation to 75%
+    setTimeout(() => {
+      this.justCompleted = false;
+    }, 1500);
   }
 }
 </script>
